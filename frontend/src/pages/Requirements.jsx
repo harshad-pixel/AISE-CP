@@ -3,6 +3,7 @@ import { Sparkles, Upload } from 'lucide-react'
 import RequirementForm from '../components/RequirementForm.jsx'
 import RequirementList from '../components/RequirementList.jsx'
 import { projectApi, requirementApi } from '../services/api.js'
+import seedData from '../seedData.js'
 
 function Requirements() {
   const [projects, setProjects] = useState([])
@@ -68,18 +69,8 @@ function Requirements() {
   const handleSeed = async () => {
     if (!selectedProject) return
     setSeeding(true)
+    setAnalysisMsg('')
     try {
-      const response = await fetch('/seed_requirements.json')
-      // Fallback: load from local data path
-      let seedData
-      try {
-        const res = await fetch('/api/seed')
-        seedData = await res.json()
-      } catch {
-        // If no seed endpoint, import inline
-        const seedModule = await import('../seedData.js')
-        seedData = seedModule.default
-      }
       await requirementApi.bulkCreate({
         project_id: selectedProject,
         requirements: seedData.map((r) => ({ ...r, project_id: selectedProject })),
@@ -87,7 +78,7 @@ function Requirements() {
       await fetchRequirements()
       setAnalysisMsg(`Seeded ${seedData.length} sample requirements.`)
     } catch (err) {
-      setAnalysisMsg('Failed to seed: ' + (err.message))
+      setAnalysisMsg('Failed to seed: ' + (err.response?.data?.detail || err.message))
     } finally {
       setSeeding(false)
     }
